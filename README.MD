@@ -17,22 +17,22 @@ Demo implementation of the [Catapush](http://www.catapush.com) messaging on a Ph
 Follow this steps to setup your first Cordova app (similar steps for a Ionic app). You should have [nodejs and npm installed](https://nodejs.org/en/download/).
 
 1. Install cordova:
-```bash
-npm install -g cordova
-```
+   ```bash
+   npm install -g cordova
+   ```
 
 2. Setup a new project:
-```bash
-cordova create catapush com.company.app DemoApp
-```
+   ```bash
+   cordova create catapush com.company.app DemoApp
+   ```
 
 3. Install required plugins:
-```bash
-cd cordova
-cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-device.git
-cordova plugin add phonegap-plugin-push --variable SENDER_ID="XXXXXXX"
-cordova plugin add cordova-plugin-x-toast
-```
+   ```bash
+   cd cordova
+   cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-device.git
+   cordova plugin add phonegap-plugin-push --variable SENDER_ID="XXXXXXX"
+   cordova plugin add cordova-plugin-x-toast
+   ```
 
 4. [Download the project](https://github.com/Catapush/phonegap-demo/archive/master.zip) and replace the www folder to use it as a boilerplate.
 
