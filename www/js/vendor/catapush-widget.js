@@ -1,4 +1,4 @@
-/*! catapush widget v1.0.2 | (c) Catapush | catapush.com */
+/*! catapush widget v1.0.4 | (c) Catapush | catapush.com */
 /*
  * jQuery appear plugin
  *
@@ -449,7 +449,7 @@
                 catapushWidget.catapush = catapushWidget.options.instance;
             } else {
                 catapushWidget.catapush = Catapush.get();
-                catapushWidget.catapush.setApp(catapushWidget.options.appKey, catapush.PLATFORM.ANDROID).setUser(catapushWidget.options.user, catapushWidget.options.password);
+                catapushWidget.catapush.setApp(catapushWidget.options.appKey, catapush.PLATFORM.WEB).setUser(catapushWidget.options.user, catapushWidget.options.password);
             }
             that.data('catapush', catapushWidget.catapush);
             if (catapushWidget.options.connect) {

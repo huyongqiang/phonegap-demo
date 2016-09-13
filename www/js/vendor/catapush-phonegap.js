@@ -1,11 +1,11 @@
-/*! catapush phonegap v1.0.2 | (c) Catapush | catapush.com */
+/*! catapush phonegap v1.0.4 | (c) Catapush | catapush.com */
 /**
  * Catapush Phonegap Library
  */
 (function () {
     window.CatapushPhonegap = {
         catapush: null, // Catapush instance
-        onForeground: true, // True if app in in foreground, false in background
+        onForeground: !window.startOnBackground, // True if app in in foreground, false in background
         /**
          * Handy logging function
          * @param str
@@ -134,13 +134,15 @@
             });
 
             // Detect app status
-            document.addEventListener("resume", function () {
+            document.addEventListener("resume", function (e) {
+                that.writeLog("App resumed");
                 if (!window.CatapushPhonegap.onForeground) {
                     window.CatapushPhonegap.onForeground = true;
                     $(that).trigger.apply($(that), ['catapush.phonegap.show']);
                 }
             }, false);
             document.addEventListener("pause", function () {
+                that.writeLog("App paused");
                 if (window.CatapushPhonegap.onForeground) {
                     window.CatapushPhonegap.onForeground = false;
                     $(that).trigger.apply($(that), ['catapush.phonegap.hide']);

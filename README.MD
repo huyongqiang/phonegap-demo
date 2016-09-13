@@ -30,7 +30,7 @@ Follow this steps to setup your first Cordova app (similar steps for a Ionic app
    ```bash
    cd cordova
    cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-device.git
-   cordova plugin add phonegap-plugin-push --variable SENDER_ID="XXXXXXX"
+   cordova plugin add https://github.com/Catapush/phonegap-plugin-push.git --variable SENDER_ID="XXXXXXX" (in alternative to cordova plugin add phonegap-plugin-push)
    cordova plugin add cordova-plugin-x-toast
    ```
 
@@ -44,6 +44,8 @@ Follow this steps to setup your first Cordova app (similar steps for a Ionic app
 cordova platform add ios@3.9.2
 cordova plugin add phonegap-plugin-push@1.5.3 --variable SENDER_ID="XXXXXXX"
 ```
+
+* Official Phonegap Push Plugin currently has a bug with Android devices which prevents app restart when a push notification is received if the app has been closed manually. There is a pending [pull request](https://github.com/phonegap/phonegap-plugin-push/pull/1086) that can be used to patch the bug until it is merged or even better use the [Catapush phonegap-plugin-push repository](https://github.com/Catapush/phonegap-plugin-push). Please remember to change MainActivity.java as suggested in the documentation. 
 
 * Follow these instructions to setup push notification in your Catapush App Dashboard
   * [Google GCM](http://www.catapush.com/docs-android)

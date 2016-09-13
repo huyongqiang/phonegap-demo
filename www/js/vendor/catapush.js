@@ -1,4 +1,4 @@
-/*! catapush v1.0.7 | (c) Catapush | catapush.com */
+/*! catapush v1.0.9 | (c) Catapush | catapush.com */
 /**
  * Main class, it's the connection between all other components, services and models
  */
@@ -126,9 +126,11 @@
                     message.setReceivedAt(new Date());
                     that.storage.addMessage(message);
                     that.service.event.publish('catapush.messagereceived', [message]);
-                    that.service.xmpp.sendReceipt(that.xmppConnection, message);
-                    message.setReceivedReceiptSent(true);
-                    that.storage.updateMessage(message);
+                    var sent = that.service.xmpp.sendReceipt(that.xmppConnection, message);
+                    if(sent){
+                        message.setReceivedReceiptSent(true);
+                        that.storage.updateMessage(message);
+                    }
                 }
                 return true; // keep handler active
             };
@@ -168,9 +170,11 @@
                 message.setReadAt(new Date());
                 that.storage.updateMessage(message);
                 var uniqueId = that.service.xmpp.sendRead(that.xmppConnection, message);
-                message.setReadReceiptSentAt(new Date());
-                message.setReadReceiptSentId(uniqueId);
-                that.storage.updateMessage(message);
+                if(uniqueId) {
+                    message.setReadReceiptSentAt(new Date());
+                    message.setReadReceiptSentId(uniqueId);
+                    that.storage.updateMessage(message);
+                }
                 deferred.resolve(message);
             });
             return deferred.promise();
@@ -264,15 +268,17 @@
  */
 (function (catapush) {
     var config = function (env) {
-        if (!env || env == 'prod') {
+        //if (!env || env == 'prod') {
             this.apiLibraryUrl = 'http://mobile.catapush.com';
-            this.xmppBoshUrl = 'http://mobile.catapush.com/http-bind/';
+            //this.xmppBoshUrl = 'http://mobile.catapush.com/http-bind/';
+            this.xmppBoshUrl = 'ws://ws-xmpp.catapush.com:5290/';
             this.xmppHostname = 'xmpp.catapush.com';
-        } else if (env == 'dev') {
-            /*this.apiLibraryUrl = 'http://dev.api_library-integration.devel.catapush.rocks';
-            this.xmppBoshUrl = 'http://dev.api_library-nicola.devel.catapush.rocks/http-bind/';
-            this.xmppHostname = 'xmpp.catapush.rocks';*/
-        }
+        /*} else if (env == 'dev') {
+            this.apiLibraryUrl = 'http://dev.api_library-integration.devel.catapush.rocks';
+            //this.xmppBoshUrl = 'http://dev.api_library-nicola.devel.catapush.rocks/http-bind/';
+            this.xmppBoshUrl = 'ws://54.72.117.154:5290/';
+            this.xmppHostname = 'xmpp.catapush.rocks';
+        }*/
     };
     config.prototype = {
         apiLibraryUrl: null,
@@ -1027,105 +1033,77 @@
 (function (catapush) {
     catapush.service = catapush.service || {};
     catapush.service.xmpp = {
+        silentReconnect: false,
+        wantConnected : false,
         connect: function (config, mobileUser, sendPresence, messageHandler, callbackConnected, callbackDisconnected, callbackError, callbackReconnected) {
             var that = this;
+            that.wantConnected = true;
+            that.silentReconnect = false;
             var xmppConnection = new catapush.ext.Strophe.Connection(config.getXmppBoshUrl());
-            var onConnect = null;
-            onConnect = function(status) {
+            //var onConnect = null;
+            var onConnect = function(status) {
+                //console.log('status',status);
                 if (status == catapush.ext.Strophe.Status.CONNECTED) {
                     // Connection successfull
                     if (sendPresence) {
                         xmppConnection.send($pres());
                     }
-                    if(!xmppConnection._proto.silentlyResettingConnection){
-                        callbackConnected(xmppConnection);
+                    if(that.silentReconnect){
+                        callbackReconnected();
                     }else{
-                        xmppConnection._proto.silentlyResettingConnection = false;
+                        callbackConnected(xmppConnection);
                     }
                     xmppConnection._proto.isConnecting = false;
+                    xmppConnection.streamManagement.enable();
+                    xmppConnection.streamManagement.sendCountOnEveryIncomingStanza = true;
+                    xmppConnection.streamManagement.requestResponseInterval = 1;
+
                 } else if (status == catapush.ext.Strophe.Status.CONNFAIL) {
+                    xmppConnection._proto.isConnecting = false;
                     callbackError(new catapush.model.error('NetworkProblem'));
-                    if(xmppConnection._proto.isConnecting){
-                        // Reconnect if isConnecting
-                        setTimeout(function(){
-                            xmppConnection._proto._connect();
-                            xmppConnection.addHandler(messageHandler, null, 'message', null, null, null);
-                        },5000);
-                    }
                 } else if (status == catapush.ext.Strophe.Status.AUTHFAIL) {
+                    xmppConnection._proto.isConnecting = false;
                     callbackError(new catapush.model.error('WrongAuthentication'));
                 } else if (status == catapush.ext.Strophe.Status.ERROR) {
+                    xmppConnection._proto.isConnecting = false;
                     callbackError(new catapush.model.error('XMPP Error'));
                 } else if (status == catapush.ext.Strophe.Status.DISCONNECTED) {
-                    callbackDisconnected(xmppConnection);
-                    if(xmppConnection._proto.silentlyResettingConnection){
-                        //xmppConnection._reset();
-                        //xmppConnection.connect(mobileUser.getJid() + '/Mobile', mobileUser.getPassword(), onConnect);
-                        xmppConnection._proto._connect();
-                        xmppConnection.addHandler(messageHandler, null, 'message', null, null, null);
-                        xmppConnection._proto.isConnecting = true;
+                    xmppConnection._proto.isConnecting = false;
+                    if(that.wantConnected){
+                        console.log('reconnect');
+                        that.silentReconnect = true;
+                        callbackError(new catapush.model.error('NetworkProblem'));
+                        // Retry connect
+                        if(!xmppConnection._proto.isConnecting) {
+                            xmppConnection._proto.isConnecting = true;
+                            setTimeout(function () {
+                                if(!that.wantConnected || !that.silentReconnect){
+                                    return;
+                                }
+                                xmppConnection._proto._connect();
+                                xmppConnection.addHandler(messageHandler, null, 'message', null, null, null);
+                            }, 5000);
+                        }
                     }
-                    xmppConnection._proto.silentlyResettingConnection = false;
+                    callbackDisconnected(xmppConnection);
+
                 } else if (status == catapush.ext.Strophe.Status.CONNTIMEOUT) {
+                    xmppConnection._proto.isConnecting = false;
                     callbackDisconnected(xmppConnection);
                 }
-            };
-            xmppConnection.badErrorSent = false; // BAD Unrecoverable error in connection
-            xmppConnection._proto.disconnectedSent = false; // Recoverable error in connection (eg. Network unavailable)
-            xmppConnection._proto.silentlyResettingConnection = false; // Reset connection silently
-            xmppConnection._proto.isConnecting = false; // Is connecting
-            xmppConnection._proto._hitError = function (reqStatus) {
-                if(reqStatus==0) {
-                    // Ignore - missing connection
-                    if(!this.disconnectedSent){
-                        callbackError(new catapush.model.error('NetworkProblem'));
-                        this.disconnectedSent = true;
-                    }
-                }else if(reqStatus==404){
-                    // SID error behave as missed connection
-                    if(!this.disconnectedSent){
-                        callbackError(new catapush.model.error('NetworkProblem'));
-                        this.disconnectedSent = true;
-                    }
-                    // Connection reset needed
-                    if(!this.silentlyResettingConnection) {
-                        this.silentlyResettingConnection = true;
-                        //this._onDisconnectTimeout();
-                        //this._doDisconnect();
-                        //this._reset();
-                    }
-                }else{
-                    // A more serious problem, disconnect everything
-                    this.errors++;
-                    if(!this.badErrorSent) {
-                        this.badErrorSent = true;
-                        this._onDisconnectTimeout();
-                        this._doDisconnect();
-                        this._reset();
-                        callbackError(new catapush.model.error('XMPP Error'));
-                        callbackDisconnected(xmppConnection);
-                    }
-                }
-            };
-            // Handle succeeded requests
-            xmppConnection._proto._onRequestStateChangeOriginal = xmppConnection._proto._onRequestStateChange;
-            xmppConnection._proto._onRequestStateChange = function(func,req){
-              var that=this;
-              this._onRequestStateChangeOriginal(function(req){
-                  if(that.disconnectedSent){
-                      callbackReconnected();
-                      that.disconnectedSent = false;
-                  }
-                func(req);
-              },req);
             };
 
+            if(xmppConnection._proto.isConnecting){
+                return false;
+            }
+            xmppConnection._proto.isConnecting = true;
             xmppConnection.addHandler(messageHandler, null, 'message', null, null, null);
             xmppConnection.connect(mobileUser.getJid() + '/Mobile', mobileUser.getPassword(), onConnect);
-            xmppConnection._proto.isConnecting = true;
             return xmppConnection;
         },
         disconnect: function (config, xmppConnection) {
+            that.wantConnected = false;
+            that.silentReconnect = false;
             xmppConnection.disconnect();
         },
         /**
@@ -1142,6 +1120,10 @@
                 });
             out.tree().appendChild(request);
             xmppConnection.send(out);
+            if(!xmppConnection.connected){
+                return false;
+            }
+            return true;
         },
         /**
          *
@@ -1160,10 +1142,237 @@
             out.tree().appendChild(request);
             out.tree().appendChild(request2);
             xmppConnection.send(out);
+            if(!xmppConnection.connected){
+                return false;
+            }
             return uniqueId;
         }
     };
 })(window.Catapush);
+
+/**
+ * https://github.com/hanicker/openfire-websockets/blob/master/src/ofchat/js/strophejs/plugins/plugin.cm.js
+ */
+
+
+/**
+ * StropheJS - Stream Management XEP-0198
+ *
+ * This plugin implements stream mangemament ACK capabilities of the specs XEP-0198.
+ * Note: Resumption is not supported in this current implementation.
+ *
+ * Reference: http://xmpp.org/extensions/xep-0198.html
+ *
+ * @class streamManagement
+ */
+Strophe.addConnectionPlugin('streamManagement', {
+
+    /**
+     * @property {Boolean} autoSendCountOnEveryIncomingStanza: Set to true to send an 'a' response after every stanza.
+     * @default false
+     * @public
+     */
+    autoSendCountOnEveryIncomingStanza: false,
+
+    /**
+     * @property {Integer} requestResponseInterval: Set this value to send a request for counter on very interval
+     * number of stanzas sent. Set to 0 to disable.
+     * @default 5
+     * @public
+     */
+    requestResponseInterval: 5,
+
+    /**
+     * @property {Pointer} _c: Strophe connection instance.
+     * @private
+     */
+    _c: null,
+
+    /**
+     * @property {String} _NS XMPP Namespace.
+     * @private
+     */
+    _NS: 'urn:xmpp:sm:3',
+
+    /**
+     * @property {Boolean} _isStreamManagementEnabled
+     * @private
+     */
+    _isStreamManagementEnabled: false,
+
+    /**
+     * @property {Integer} _serverProcesssedStanzasCounter: Keeps count of stanzas confirmed processed by the server.
+     * The server is the source of truth of this value. It is the 'h' attribute on the latest 'a' element received
+     * from the server.
+     * @private
+     */
+    _serverProcesssedStanzasCounter: null,
+
+    /**
+     * @property {Integer} _clientProcessedStanzasCounter: Counter of stanzas received by the client from the server.
+     * Client is the source of truth of this value. It is the 'h' attribute in the 'a' sent from the client to
+     * the server.
+     * @private
+     */
+    _clientProcessedStanzasCounter: null,
+
+    /**
+     * @property {Integer} _clientSentStanzasCounter
+     * @private
+     */
+    _clientSentStanzasCounter: null,
+
+    /**
+     * Stores a reference to Strophe connection send function to wrap counting functionality.
+     * @method _originalSend
+     * @type {Handler}
+     * @private
+     */
+    _originalSend: null,
+
+    /**
+     * @property {Handler} _requestHandler: Stores reference to handler that process count request from server.
+     * @private
+     */
+    _requestHandler: null,
+
+    /**
+     * @property {Handler} _incomingHanlder: Stores reference to hanlder that processes incoming stanzas count.
+     * @private
+     */
+    _incomingHandler: null,
+
+    /**
+     * @property {Integer} _requestResponseIntervalCount: Counts sent stanzas since last response request.
+     */
+    _requestResponseIntervalCount: 0,
+
+    init: function(conn) {
+        this._c = conn;
+        Strophe.addNamespace('SM', this._NS);
+
+        // Storing origina send function to use additional logic
+        this._originalSend = this._c.send;
+        this._c.send = this.send.bind(this);
+    },
+
+    statusChanged: function (status) {
+        if (status === Strophe.Status.CONNECTED || status === Strophe.Status.DISCONNECTED) {
+
+            this._serverProcesssedStanzasCounter = 0;
+            this._clientProcessedStanzasCounter = 0;
+
+            this._clientSentStanzasCounter = 0;
+
+            this._isStreamManagementEnabled = false;
+            this._requestResponseIntervalCount = 0;
+
+            if (this._requestHandler) {
+                this._c.deleteHandler(this._requestHandler);
+            }
+
+            if (this._incomingHandler) {
+                this._c.deleteHandler(this._incomingHandler);
+            }
+
+            this._requestHandler = this._c.addHandler(this._handleServerRequestHandler.bind(this), this._NS, 'r');
+            this._incomingHandler = this._c.addHandler(this._incomingStanzaHandler.bind(this));
+        }
+    },
+
+    enable: function() {
+        this._c.send($build('enable', {xmlns: this._NS, resume: false}));
+    },
+
+    /**
+     * This method overrides the send method implemented by Strophe.Connection
+     * to count outgoing stanzas
+     *
+     * @method Send
+     * @public
+     */
+    send: function(elem) {
+        if (Strophe.isTagEqual(elem, 'iq') ||
+            Strophe.isTagEqual(elem, 'presence') ||
+            (elem.node && elem.node.tagName === 'message')) {
+            this._increaseSentStanzasCounter();
+        }
+
+        return this._originalSend.call(this._c, elem);
+    },
+
+    _incomingStanzaHandler: function(elem) {
+        if (Strophe.isTagEqual(elem, 'enabled') && elem.getAttribute('xmlns') === this._NS) {
+            this._isStreamManagementEnabled = true;
+        }
+
+        if (Strophe.isTagEqual(elem, 'iq') || Strophe.isTagEqual(elem, 'presence') || Strophe.isTagEqual(elem, 'message'))  {
+            this._increaseReceivedStanzasCounter();
+
+            if (this.autoSendCountOnEveryIncomingStanza) {
+                this._answerProcessedStanzas();
+            }
+        }
+
+        if (Strophe.isTagEqual(elem, 'a')) {
+            this._setSentStanzasCounter(parseInt(elem.getAttribute('h')));
+
+            if (this.requestResponseInterval > 0) {
+                this._requestResponseIntervalCount = 0;
+            }
+        }
+
+        return true;
+    },
+
+    getClientSentStanzasCounter: function() {
+        return this._clientSentStanzasCounter;
+    },
+
+    _setSentStanzasCounter: function(count) {
+        this._serverProcesssedStanzasCounter = count;
+
+        if (this._clientSentStanzasCounter !== this._serverProcesssedStanzasCounter) {
+            console.error('Stream Management stanzas counter mismatch. Client value: ' + this._clientSentStanzasCounter + ' - Server value: ' + this._serverProcesssedStanzasCounter);
+        }
+    },
+
+    _handleServerRequestHandler: function() {
+        this._answerProcessedStanzas();
+        return true;
+    },
+
+    _answerProcessedStanzas: function() {
+        if (this._isStreamManagementEnabled) {
+            this._c.send($build('a', { xmlns: this._NS, h: this._clientProcessedStanzasCounter }));
+        }
+    },
+
+    _increaseSentStanzasCounter: function() {
+        if (this._isStreamManagementEnabled) {
+
+            this._clientSentStanzasCounter++;
+
+            if (this.requestResponseInterval > 0) {
+                this._requestResponseIntervalCount++;
+
+                if (this._requestResponseIntervalCount === this.requestResponseInterval) {
+                    this._requestResponseIntervalCount = 0;
+                    setTimeout(function(){
+                        this._originalSend.call(this._c, $build('r', { xmlns: this._NS }));
+                    }.bind(this), 100);
+                }
+            }
+        }
+    },
+
+    _increaseReceivedStanzasCounter: function() {
+        if (this._isStreamManagementEnabled) {
+            this._clientProcessedStanzasCounter++;
+        }
+    }
+
+});
 /**
  * Expose get only as a Catapush global variable
  */
@@ -1190,7 +1399,8 @@
                 PLATFORM: {
                     'ANDROID': 1,
                     'IOS': 2,
-                    'WINDOWS': 3
+                    'WINDOWS': 3,
+                    'WEB': 4
                 },
                 setApp: function (appKey, platform) {
                     instance.setMobileApp(new instance.model.mobileApp(instance, appKey, platform));

@@ -59,6 +59,7 @@ window.CatapushMessenger = {
      */
     loadCatapushWidget: function () {
         var that = this;
+        // Hide messages if not on foreground to prevent reading
         if(!window.CatapushPhonegap.getOnForeground()){
             $('.messenger-view.messenger-view-messages .container').hide();
         }
@@ -123,7 +124,9 @@ window.CatapushMessenger = {
         });
         // Event on app shown show widget
         window.CatapushPhonegap.onShow(function(){
+            $('.messenger-view.messenger-view-messages .container').show();
             $('.messenger-view.messenger-view-messages .container').catapushWidget('checkRead');
+            $('.messenger-view.messenger-view-messages .container').catapushWidget('scrollToLastMessage', true);
         });
     },
     /**
