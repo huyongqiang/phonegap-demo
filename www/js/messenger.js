@@ -114,7 +114,7 @@ window.CatapushMessenger = {
             } else if (err.name == 'WrongAuthentication' || err.name == 'WrongAuthenticationClientCredentials') {
                 message = 'Authentication error';
             }
-            window.CatapushPhonegap.alert(message);
+            //window.CatapushPhonegap.alert(message);
             that.switchToView('login');
         });
         this.catapush.onReconnected(function () {

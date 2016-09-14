@@ -1,4 +1,4 @@
-/*! catapush v1.0.9 | (c) Catapush | catapush.com */
+/*! catapush v1.0.11 | (c) Catapush | catapush.com */
 /**
  * Main class, it's the connection between all other components, services and models
  */
@@ -196,7 +196,8 @@
          */
         resetConnection: function () {
             if (this.xmppConnection) {
-                this.xmppConnection.disconnect();
+                this.disconnectXmpp();
+                //this.xmppConnection.disconnect();
                 this.xmppConnection.reset();
             }
         }
@@ -1070,7 +1071,7 @@
                 } else if (status == catapush.ext.Strophe.Status.DISCONNECTED) {
                     xmppConnection._proto.isConnecting = false;
                     if(that.wantConnected){
-                        console.log('reconnect');
+                        //console.log('reconnect');
                         that.silentReconnect = true;
                         callbackError(new catapush.model.error('NetworkProblem'));
                         // Retry connect
@@ -1102,8 +1103,8 @@
             return xmppConnection;
         },
         disconnect: function (config, xmppConnection) {
-            that.wantConnected = false;
-            that.silentReconnect = false;
+            this.wantConnected = false;
+            this.silentReconnect = false;
             xmppConnection.disconnect();
         },
         /**
