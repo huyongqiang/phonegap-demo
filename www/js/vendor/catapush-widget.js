@@ -116,6 +116,15 @@
         return jQuery;
     }
 }());
+/** js-sha1 **/
+(function(x,F){"undefined"!=typeof module&&(x=global);var k="0123456789abcdef".split(""),C=[-2147483648,8388608,32768,128],v=[24,16,8,0],b=[],D=function(w){var x="string"!=typeof w;x&&w.constructor==ArrayBuffer&&(w=new Uint8Array(w));var n,p,q,r,t,m=0,y=!1,a,l,h,u=0,z=0,B=0,A=w.length;n=1732584193;p=4023233417;q=2562383102;r=271733878;t=3285377520;do{b[0]=m;b[16]=b[1]=b[2]=b[3]=b[4]=b[5]=b[6]=b[7]=b[8]=b[9]=b[10]=b[11]=b[12]=b[13]=b[14]=b[15]=0;if(x)for(a=z;u<A&&64>a;++u)b[a>>2]|=w[u]<<v[a++&3];else for(a=
+z;u<A&&64>a;++u)m=w.charCodeAt(u),128>m?b[a>>2]|=m<<v[a++&3]:(2048>m?b[a>>2]|=(192|m>>6)<<v[a++&3]:(55296>m||57344<=m?b[a>>2]|=(224|m>>12)<<v[a++&3]:(m=65536+((m&1023)<<10|w.charCodeAt(++u)&1023),b[a>>2]|=(240|m>>18)<<v[a++&3],b[a>>2]|=(128|m>>12&63)<<v[a++&3]),b[a>>2]|=(128|m>>6&63)<<v[a++&3]),b[a>>2]|=(128|m&63)<<v[a++&3]);B+=a-z;z=a-64;u==A&&(b[a>>2]|=C[a&3],++u);m=b[16];u>A&&56>a&&(b[15]=B<<3,y=!0);for(h=16;80>h;++h)a=b[h-3]^b[h-8]^b[h-14]^b[h-16],b[h]=a<<1|a>>>31;var c=n,d=p,e=q,f=r,g=t;for(h=
+0;20>h;h+=5)l=d&e|~d&f,a=c<<5|c>>>27,g=a+l+g+1518500249+b[h]<<0,d=d<<30|d>>>2,l=c&d|~c&e,a=g<<5|g>>>27,f=a+l+f+1518500249+b[h+1]<<0,c=c<<30|c>>>2,l=g&c|~g&d,a=f<<5|f>>>27,e=a+l+e+1518500249+b[h+2]<<0,g=g<<30|g>>>2,l=f&g|~f&c,a=e<<5|e>>>27,d=a+l+d+1518500249+b[h+3]<<0,f=f<<30|f>>>2,l=e&f|~e&g,a=d<<5|d>>>27,c=a+l+c+1518500249+b[h+4]<<0,e=e<<30|e>>>2;for(;40>h;h+=5)l=d^e^f,a=c<<5|c>>>27,g=a+l+g+1859775393+b[h]<<0,d=d<<30|d>>>2,l=c^d^e,a=g<<5|g>>>27,f=a+l+f+1859775393+b[h+1]<<0,c=c<<30|c>>>2,l=g^c^d,
+a=f<<5|f>>>27,e=a+l+e+1859775393+b[h+2]<<0,g=g<<30|g>>>2,l=f^g^c,a=e<<5|e>>>27,d=a+l+d+1859775393+b[h+3]<<0,f=f<<30|f>>>2,l=e^f^g,a=d<<5|d>>>27,c=a+l+c+1859775393+b[h+4]<<0,e=e<<30|e>>>2;for(;60>h;h+=5)l=d&e|d&f|e&f,a=c<<5|c>>>27,g=a+l+g-1894007588+b[h]<<0,d=d<<30|d>>>2,l=c&d|c&e|d&e,a=g<<5|g>>>27,f=a+l+f-1894007588+b[h+1]<<0,c=c<<30|c>>>2,l=g&c|g&d|c&d,a=f<<5|f>>>27,e=a+l+e-1894007588+b[h+2]<<0,g=g<<30|g>>>2,l=f&g|f&c|g&c,a=e<<5|e>>>27,d=a+l+d-1894007588+b[h+3]<<0,f=f<<30|f>>>2,l=e&f|e&g|f&g,a=d<<
+5|d>>>27,c=a+l+c-1894007588+b[h+4]<<0,e=e<<30|e>>>2;for(;80>h;h+=5)l=d^e^f,a=c<<5|c>>>27,g=a+l+g-899497514+b[h]<<0,d=d<<30|d>>>2,l=c^d^e,a=g<<5|g>>>27,f=a+l+f-899497514+b[h+1]<<0,c=c<<30|c>>>2,l=g^c^d,a=f<<5|f>>>27,e=a+l+e-899497514+b[h+2]<<0,g=g<<30|g>>>2,l=f^g^c,a=e<<5|e>>>27,d=a+l+d-899497514+b[h+3]<<0,f=f<<30|f>>>2,l=e^f^g,a=d<<5|d>>>27,c=a+l+c-899497514+b[h+4]<<0,e=e<<30|e>>>2;n=n+c<<0;p=p+d<<0;q=q+e<<0;r=r+f<<0;t=t+g<<0}while(!y);return k[n>>28&15]+k[n>>24&15]+k[n>>20&15]+k[n>>16&15]+k[n>>12&
+15]+k[n>>8&15]+k[n>>4&15]+k[n&15]+k[p>>28&15]+k[p>>24&15]+k[p>>20&15]+k[p>>16&15]+k[p>>12&15]+k[p>>8&15]+k[p>>4&15]+k[p&15]+k[q>>28&15]+k[q>>24&15]+k[q>>20&15]+k[q>>16&15]+k[q>>12&15]+k[q>>8&15]+k[q>>4&15]+k[q&15]+k[r>>28&15]+k[r>>24&15]+k[r>>20&15]+k[r>>16&15]+k[r>>12&15]+k[r>>8&15]+k[r>>4&15]+k[r&15]+k[t>>28&15]+k[t>>24&15]+k[t>>20&15]+k[t>>16&15]+k[t>>12&15]+k[t>>8&15]+k[t>>4&15]+k[t&15]};if(x.JS_SHA1_TEST||"undefined"==typeof module)x&&(x.sha1=D);else{var y=require("crypto"),E=require("buffer").Buffer;
+module.exports=function(b){if("string"==typeof b)return y.createHash("sha1").update(b,"utf8").digest("hex");b.constructor==ArrayBuffer&&(b=new Uint8Array(b));return y.createHash("sha1").update(new E(b)).digest("hex")}}})(this);
+
 (function ($) {
 
     var catapushWidget = {
@@ -135,6 +144,7 @@
             'interaction': {
                 'scrollOnMessage': true,
                 'scrollOnLoad': true,
+                'enable2Way':false
             },
             'event':{
                 'beforeSendRead':null
@@ -142,15 +152,72 @@
             'strings': {
                 'en-us': {
                     'today': 'today',
-                    'noMessages': 'no messages to show'
+                    'noMessages': 'no messages to show',
+                    'resetButton': 'Reset',
+                    'message':'Message'
                 },
                 'it-it': {
                     'today': 'oggi',
-                    'noMessages': 'nessun messaggio da visualizzare'
+                    'noMessages': 'nessun messaggio da visualizzare',
+                    'resetButton': 'Reset',
+                    'message':'Messaggio'
                 }
+            },
+            'attachments':{
+                'storeHandler':null,
+                'openHandler':null,
+                'enableOpenHandler':null
             }
         },
         strings: null,
+        attachmentIcons : {
+            image: 'fa-file-image-o',
+            pdf: 'fa-file-pdf-o',
+            word: 'fa-file-word-o',
+            powerpoint: 'fa-file-powerpoint-o',
+            excel: 'fa-file-excel-o',
+            audio: 'fa-file-audio-o',
+            video: 'fa-file-video-o',
+            zip: 'fa-file-zip-o',
+            code: 'fa-file-code-o',
+            file: 'fa-file-o'
+        },
+        attachmentExtensions : {
+            gif: 'image',
+            jpeg: 'image',
+            jpg: 'image',
+            png: 'image',
+
+            pdf: 'pdf',
+
+            doc: 'word',
+            docx: 'word',
+
+            ppt: 'powerpoint',
+            pptx: 'powerpoint',
+
+            xls: 'excel',
+            xlsx: 'excel',
+
+            aac: 'audio',
+            mp3: 'audio',
+            ogg: 'audio',
+
+            avi: 'video',
+            flv: 'video',
+            mkv: 'video',
+            mp4: 'video',
+
+            gz: 'zip',
+            zip: 'zip',
+
+            css: 'code',
+            html: 'code',
+            js: 'code',
+
+            file: 'file'
+        },
+        supportedImageAttachmentPreviews : ['image/png', 'image/vnd.wap.wbmp', 'image/x-png', 'image/jpeg', 'image/bmp', 'image/gif'],
         init: function () {
             var userLang = (navigator.language || navigator.userLanguage).toLowerCase();
             this.strings = typeof(this.options.strings[userLang]) !== 'undefined' ? this.options.strings[userLang] : this.options.strings['en-us'];
@@ -321,22 +388,91 @@
                 var message = messages[i];
                 var newDate = message.sentAt;
                 // Check for day change
-                if (that.options.display.showDayMark && (!currentDate || currentDate.toDateString() != newDate.toDateString())) {
+                if (that.options.display.showDayMark && (!currentDate || !newDate || currentDate.toDateString() != newDate.toDateString())) {
                     this.addDayMark(prepend ? currentDate : newDate, prepend);
                 }
                 var el =
                         $('<li>')
                             .addClass('message')
-                            .attr('message-id', message.id)
-                            .append(
-                                //$('<div>').addClass('text').text(message.text)
-                                //$('<div>').addClass('text').html($('<div>').html(message.text).text())
-                                $('<div>').addClass('text').html(message.text)
-                            )
-                            .append(
-                                $('<div>').addClass('date').text(that.dateFormatMessage(message.sentAt))
-                            )
+                            .attr('message-id', message.id);
                     ;
+                if (message.text){
+                    el.append(
+                        //$('<div>').addClass('text').text(message.text)
+                        //$('<div>').addClass('text').html($('<div>').html(message.text).text())
+                        $('<div>').addClass('text').html(message.text)
+                    );
+                }
+                if (message.attachment){
+                    var attachmentElement = $('<div>').addClass('attachment');
+
+                    var icon = this.attachmentIcons.file;
+                    if(message.attachment.filename) {
+                        var ext = message.attachment.filename.substr(message.attachment.filename.lastIndexOf('.') + 1).toLowerCase();
+                        if (ext in this.attachmentExtensions) {
+                            var icon = this.attachmentIcons[this.attachmentExtensions[ext]];
+                        }
+                    }
+                    var iconHtml = '<i class="fa '+icon+' fa-lg"></i>';
+
+                    attachmentElement.append(iconHtml);
+
+                    if(message.attachment.preview && message.attachment.preview.content && $.inArray(message.attachment.preview.mediaType,this.supportedImageAttachmentPreviews)!=-1){
+                        var attachmentPreviewImage = $("<img>").addClass('preview').attr('src', 'data:'+message.attachment.preview.mediaType+';base64,'+message.attachment.preview.content);
+                        attachmentElement.append(attachmentPreviewImage);
+                    }
+
+                    if(message.attachment.filename) {
+                        var spanFilename = $('<span>').addClass('filename').text(message.attachment.filename);
+                        attachmentElement.append(spanFilename);
+                    }
+
+                    if(message.attachment.url){
+                        // Check validity based on time
+                        var messageSendTime = message.sentAt;
+                        var oneDay = 24*60*60*1000; // hours*minutes*seconds*milliseconds
+                        var diffDays = Math.round(Math.abs(((new Date()).getTime() - messageSendTime.getTime())/(oneDay)));
+                        var availabilityDays = 15; // online storage cleaned every ~ 30 days
+
+                        if(diffDays <= availabilityDays) {
+                            // If still stored remotely
+                            attachmentElement = $('<a>').addClass('attachment-container').attr('target', '_blank').attr('href', message.attachment.url).append(attachmentElement);
+                        }
+
+                        // Visualize
+                        if(that.options.attachments.enableOpenHandler && that.options.attachments.openHandler){
+                            // If storage enabled
+                            var saveName = message.id + (message.attachment.filename.split("").reverse().join("").substr(0,150).split("").reverse().join(""));
+                            (function(message,saveName,attachmentElement,diffDays,availabilityDays){
+                                that.options.attachments.enableOpenHandler(saveName,function(res){
+                                    var attachCallback = function(){
+                                        attachmentElement.click(function (e) {
+                                            e.preventDefault();
+                                            that.options.attachments.openHandler(saveName, message.attachment.mediaType);
+                                        });
+                                    };
+                                    // If available locally
+                                    if(res) {
+                                        attachCallback();
+                                    }else{
+                                        // Save if not available
+                                        if (diffDays <= availabilityDays && that.options.attachments.storeHandler) {
+                                            that.options.attachments.storeHandler(message.attachment.url, saveName, message.attachment.mediaType, function(){
+                                                attachCallback();
+                                            });
+                                        }
+                                    }
+                                });
+                            })(message,saveName,attachmentElement,diffDays,availabilityDays);
+                        }
+                    }
+                    el.append(attachmentElement);
+                }
+
+                el.append(
+                    $('<div>').addClass('date').text(that.dateFormatMessage(message.sentAt))
+                );
+
                 if (prepend) {
                     $('>ul', this.element).prepend(el);
                     this.loadedMessages.unshift(message);
@@ -345,8 +481,16 @@
                     this.loadedMessages.push(message);
                 }
 
+                if(message.twoWay){
+                    el.addClass('twoWay');
+                }
+
+                if(message.receivedSendReceiptAt){
+                    el.addClass('sent-receipt-received');
+                }
+
                 // Attach important handlers
-                if (!message.readAt) {
+                if (!message.readAt && !message.twoWay) {
                     el.appear({'force_process': true}).on('appear', function (event, $all_appeared_elements) {
                         // IMPROVEMENT check if tab currently viewed - http://stackoverflow.com/questions/1760250/how-to-tell-if-browser-tab-is-active
                         if (message.readAt) {
@@ -434,6 +578,90 @@
         showNoMessagesToShow: function () {
             var el = $('<div>').attr('class', 'no-messages').text(this.strings.noMessages);
             this.element.prepend(el);
+        },
+        add2Way:function(){
+            var that = this;
+            var element2Way = $('<div>').addClass('twoWay-form');
+            var element2WayForm = $('<form>').appendTo(element2Way);
+            var textInput = $('<input>').attr('type','text').attr('placeholder',that.strings['message']).appendTo(element2WayForm);
+            var fileInput = $('<input>').attr('type','file').appendTo(element2WayForm);
+            var attachButton = $('<div>').addClass('attach').appendTo(element2WayForm);
+            var clearInput = $('<button>').text(that.strings['resetButton']).appendTo(element2WayForm);
+            var submit = $('<input>').attr('type','submit').prop('disabled',true).appendTo(element2WayForm);
+
+            var sendMessage = function(text,attachment){
+                var message = that.catapush.sendMessage(text,attachment);
+                catapushWidget.addToList([message], false);
+                $('.filename',element2WayForm).remove();
+                textInput.val('');
+                fileInput.val('');
+                submit.prop('disabled',false);
+                if (catapushWidget.options.interaction.scrollOnMessage) {
+                    catapushWidget.scrollToLastMessage(false);
+                }
+            };
+
+            element2WayForm.submit(function(e){
+                e.preventDefault();
+                //alert(textInput.val());
+                submit.prop('disabled',true);
+                if(fileInput[0].files.length>0){
+                    var file =  fileInput[0].files[0];
+
+                    var attachment = {};
+                    attachment.filename = file.name;
+                    attachment.mediaType = file.type;
+                    attachment.size = file.size;
+                    //console.log(file);
+                    catapushWidget.catapush.uploadFile(file,function(data){
+                        //console.log(data);
+                        // get sha
+                        var reader = new FileReader();
+                        reader.onload = function (event) {
+                            var file_sha1 = sha1(event.target.result);
+                            attachment.hash = file_sha1;
+                            attachment.url = data.remoteUrl;
+                            //console.log(attachment);
+                            sendMessage(textInput.val(),attachment);
+                        };
+                        reader.readAsArrayBuffer(file);
+                    },function(){
+
+                    });
+                }else{
+                    sendMessage(textInput.val(),null);
+                }
+            });
+            textInput.bind('input',function(){
+                if(textInput.val().length>0){
+                    submit.prop('disabled',false);
+                }else{
+                    submit.prop('disabled',true);
+                }
+            });
+            fileInput.change(function(){
+                $('.filename',element2WayForm).remove();
+               if(fileInput.val()){
+                   var file =  fileInput[0].files[0];
+                   attachButton.after($('<span>').addClass('filename').text(file.name));
+                   submit.prop('disabled',false);
+               }else{
+                   submit.prop('disabled',true);
+               }
+            });
+            clearInput.click(function(e){
+                e.preventDefault();
+                $('.filename',element2WayForm).remove();
+                textInput.val('');
+                fileInput.val('');
+                submit.prop('disabled',true);
+            });
+            attachButton.click(function(e){
+                e.preventDefault();
+                fileInput.trigger('click');
+            });
+
+            this.element.addClass('catapush-widget').append(element2Way);
         }
     };
 
@@ -442,20 +670,19 @@
         init: function (options) {
             var that = this;
             catapushWidget.element = this;
-            catapushWidget.options = $.extend(catapushWidget.options, options);
+            catapushWidget.options = $.extend(true,catapushWidget.options, options);
             catapushWidget.init();
 
             if (options.instance) {
                 catapushWidget.catapush = catapushWidget.options.instance;
             } else {
                 catapushWidget.catapush = Catapush.get();
-                catapushWidget.catapush.setApp(catapushWidget.options.appKey, catapush.PLATFORM.WEB).setUser(catapushWidget.options.user, catapushWidget.options.password);
+                catapushWidget.catapush.setApp(catapushWidget.options.appKey, catapushWidget.catapush.PLATFORM.WEB).setUser(catapushWidget.options.user, catapushWidget.options.password);
             }
             that.data('catapush', catapushWidget.catapush);
             if (catapushWidget.options.connect) {
                 catapushWidget.catapush.connect();
             }
-
 
             /**
              * On event message received update the list and scroll it
@@ -469,9 +696,24 @@
             });
 
             /**
+             * On event twoway receipt received add class to relative message in the list
+             */
+            catapushWidget.catapush.onMessageSentReceiptReceived(function (message) {
+                $('li.message[message-id="'+message.id+'"',this.element).addClass('sent-receipt-received');
+            });
+
+
+            /**
              * Starts everything
              */
             catapushWidget.load();
+
+            /**
+             * Eventually enable 2way
+             */
+            if(catapushWidget.options.interaction.enable2Way){
+                catapushWidget.add2Way();
+            }
         },
         /**
          * Scroll to last message

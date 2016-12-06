@@ -78,16 +78,12 @@ window.CatapushMessenger = {
             'interaction': {
                 'scrollOnMessage': true,
                 'scrollOnLoad': true,
+                'enable2Way':true
             },
-            'strings': {
-                'en-us': {
-                    'today': 'today',
-                    'noMessages': 'no messages to show'
-                },
-                'it-it': {
-                    'today': 'oggi',
-                    'noMessages': 'nessun messaggio da visualizzare'
-                }
+            'attachments':{
+                'storeHandler':window.CatapushPhonegap.attachment.storeAttachment,
+                'openHandler':window.CatapushPhonegap.attachment.openFile,
+                'enableOpenHandler':window.CatapushPhonegap.attachment.hasFile
             }
         });
         // Event on connect show messages

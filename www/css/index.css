@@ -104,3 +104,15 @@ body {
 .app .catapush-widget{
     margin-top: 40px;
 }
+.app .catapush-widget .twoWay-form{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    padding:5px;
+    box-sizing:border-box;
+    background:#fff;
+}
+.app .catapush-widget ul{
+    margin-bottom:80px;
+}

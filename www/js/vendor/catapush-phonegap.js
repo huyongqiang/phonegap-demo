@@ -148,6 +148,110 @@
                     $(that).trigger.apply($(that), ['catapush.phonegap.hide']);
                 }
             }, false);
+        },
+        attachment: {
+            //http://cordova.apache.org/docs/en/latest/reference/cordova-plugin-file/index.html
+            //https://github.com/pwlin/cordova-plugin-file-opener2
+            //https://github.com/don/FileOpener
+            saveFile:function(dirEntry, fileData, fileName, callback) {
+                var that = window.CatapushPhonegap;
+                dirEntry.getFile(fileName, { create: true, exclusive: false }, function (fileEntry) {
+
+                    that.attachment.writeFile(fileEntry, fileData, false, callback);
+
+                }, function(){window.CatapushPhonegap.writeLog('Unable to create file')});
+            },
+            writeFile:function(fileEntry, dataObj, isAppend, callback) {
+                var that = window.CatapushPhonegap;
+                // Create a FileWriter object for our FileEntry (log.txt).
+                fileEntry.createWriter(function (fileWriter) {
+
+                    fileWriter.onwriteend = function() {
+                        //window.CatapushPhonegap.writeLog("Successful file write..."+fileEntry.fullPath);
+                        if(callback){
+                            callback();
+                        }
+                    };
+
+                    fileWriter.onerror = function(e) {
+                        window.CatapushPhonegap.writeLog("Failed file write: " + e.toString());
+                    };
+
+                    fileWriter.write(dataObj);
+                });
+            },
+            storeAttachment: function (url,filename,type,callback) {
+                var that = window.CatapushPhonegap;
+                //window.CatapushPhonegap.writeLog('store: ' + url + 'filename: '+filename);
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.responseType = 'blob';
+
+                xhr.onload = function() {
+                    if (this.status == 200) {
+
+                        var blob = new Blob([this.response], { type: type });
+                        //saveFile(dirEntry, blob, "downloadedImage.png");
+
+                        window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function (dirEntry) {
+                            window.CatapushPhonegap.writeLog('file system open: ' + dirEntry.name);
+                            //var isAppend = true;
+                            //createFile(dirEntry, "fileToAppend.txt", isAppend);
+                            //fs.root
+
+                            dirEntry.getDirectory('attachments', {create: true}, function (dirEntry2) {
+                                that.attachment.saveFile(dirEntry2, blob, filename, callback);
+                            }, function () {
+                                window.CatapushPhonegap.writeLog('Unable to create attachment directory');
+                            });
+
+                        }, function(){window.CatapushPhonegap.writeLog('Error FS storeAttachment')});
+
+                    }
+                };
+                xhr.send();
+            },
+            hasFile:function(filename,callback){
+                window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function (dirEntry) {
+                    dirEntry.getDirectory('attachments', {create: true}, function (dirEntry2) {
+                        dirEntry2.getFile(filename, { create: false, exclusive: false }, function (fileEntry) {
+                            //window.CatapushPhonegap.writeLog('File found: '+filename);
+                            callback(true);
+                        }, function(){
+                            //window.CatapushPhonegap.writeLog('File not found: '+filename);
+                            callback(false);
+                        });
+                    }, function () {
+                        callback(false);
+                    });
+                }, function(){window.CatapushPhonegap.writeLog('Error FS hasFile')});
+            },
+            openFile:function(filename,type){
+                window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function (dirEntry) {
+                    dirEntry.getDirectory('attachments', {create: true}, function (dirEntry2) {
+                        dirEntry2.getFile(filename, { create: false, exclusive: false }, function (fileEntry) {
+                            // Copy to  temporary
+                            window.resolveLocalFileSystemURL(cordova.file.externalCacheDirectory, function (dirEntryNew) {
+                                fileEntry.copyTo(dirEntryNew, filename, function(fileEntryNew){
+                                    cordova.plugins.fileOpener2.open(
+                                        fileEntryNew.nativeURL,
+                                        type,
+                                        {
+                                            error : function(){ },
+                                            success : function(){ }
+                                        }
+                                    );
+                                }, function(){});
+                            }, function () {
+                            });
+                        }, function(){
+                        });
+
+                    }, function () {
+                    });
+                }, function(){window.CatapushPhonegap.writeLog('Error FS openFile')});
+
+            }
         }
     };
 })();

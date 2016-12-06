@@ -116,9 +116,20 @@
                 if (that.ext.$('received', xmppMessage).length) {
                     // this is an ack, not a real message. Check against read ack
                     var messageId = that.ext.$('received', xmppMessage).attr('id');
-                    var message = that.storage.getMessageByField('readReceiptSentId', messageId, function (message) {
-                        message.setReadReceiptConfirmationReceived(true);
-                        that.storage.updateMessage(message);
+                    that.storage.getMessageByField('readReceiptSentId', messageId, function (message) {
+                        if(message){
+                            message.setReadReceiptConfirmationReceived(true);
+                            that.storage.updateMessage(message);
+                        }else{
+                            // Test if in two way
+                            that.storage.getMessageByField('id', messageId, function (message) {
+                                if(message && message.twoWay){
+                                    message.setReceivedSendReceiptAt(new Date());
+                                    that.storage.updateMessage(message);
+                                    that.service.event.publish('catapush.sentreceiptreceived', [message]);
+                                }
+                            });
+                        }
                     });
                 } else {
                     // real message received
@@ -200,6 +211,14 @@
                 //this.xmppConnection.disconnect();
                 this.xmppConnection.reset();
             }
+        },
+
+        /**
+         * Send message
+         */
+        sendMessage: function (msg) {
+            this.service.xmpp.sendMessage(this.xmppConnection,msg);
+            this.storage.addMessage(msg);
         }
     };
 })(jQuery, Strophe, ydn);
@@ -370,11 +389,15 @@
         sentAt: null,
         receivedAt: null,
         readAt: null,
+        attachment : null,
 
         receivedReceiptSent: false, // true if the receive ack has bee sent
         readReceiptSentAt: null, // Date when the read receipt has been sent
         readReceiptSentId: null, // unique id generated locally for the read confirm sent
         readReceiptConfirmationReceived: false, // true if an ack of the read confirm has bee received
+
+        twoWay: false, // true if this is a 2way message
+        receivedSendReceiptAt: null, // date when the message send receipt has been received
 
         getId: function () {
             return this.id;
@@ -424,6 +447,12 @@
         setReadAt: function (readAt) {
             this.readAt = readAt;
         },
+        getAttachment: function () {
+            return this.attachment;
+        },
+        setAttachment: function (attachment) {
+            this.attachment = attachment;
+        },
         getReceivedReceiptSent: function () {
             return this.receivedReceiptSent;
         },
@@ -449,6 +478,20 @@
             this.readReceiptConfirmationReceived = readReceiptConfirmationReceived;
         },
 
+        getTwoWay:function(){
+            return this.twoWay;
+        },
+        setTwoWay: function(twoWay){
+            this.twoWay = twoWay;
+        },
+        getReceivedSendReceiptAt:function(){
+            return this.receivedSendReceiptAt;
+        },
+        setReceivedSendReceiptAt: function(receivedSendReceiptAt){
+            this.receivedSendReceiptAt=receivedSendReceiptAt;
+        },
+
+
         /**
          * Get the object to be stored in local database
          */
@@ -462,10 +505,13 @@
                 sentAtTimestamp: this.getSentAt() ? this.getSentAt().getTime() : null,
                 receivedAtTimestamp: this.getReceivedAt() ? this.getReceivedAt().getTime() : null,
                 readAtTimestamp: this.getReadAt() ? this.getReadAt().getTime() : null,
+                attachment:this.getAttachment(),
                 receivedReceiptSent: this.getReceivedReceiptSent(),
                 readReceiptSentAtTimestamp: this.getReadReceiptSentAt() ? this.getReadReceiptSentAt().getTime() : null,
                 readReceiptSentId: this.getReadReceiptSentId(),
                 readReceiptConfirmationReceived: this.getReadReceiptConfirmationReceived(),
+                twoWay:this.getTwoWay(),
+                receivedSendReceiptAtTimestamp:this.getReceivedSendReceiptAt()?this.getReceivedSendReceiptAt().getTime():null,
                 sentAtTimestampAndId: this.getSentAtTimestampAndId()
             }
         },
@@ -497,10 +543,13 @@
             this.sentAt = obj.sentAtTimestamp ? new Date(obj.sentAtTimestamp) : null;
             this.receivedAt = obj.receivedAtTimestamp ? new Date(obj.receivedAtTimestamp) : null;
             this.readAt = obj.readAtTimestamp ? new Date(obj.readAtTimestamp) : null;
+            this.attachment = obj.attachment;
             this.receivedReceiptSent = obj.receivedReceiptSent;
             this.readReceiptSentAt = obj.readReceiptSentAtTimestamp ? new Date(obj.readReceiptSentAtTimestamp) : null;
             this.readReceiptSentId = obj.readReceiptSentId;
             this.readReceiptConfirmationReceived = obj.readReceiptConfirmationReceived;
+            this.twoWay = obj.twoWay;
+            this.receivedSendReceiptAt = obj.receivedSendReceiptAtTimestamp ? new Date(obj.receivedSendReceiptAtTimestamp) : null;
         },
         /**
          * Get an object without references to the internal library, that can be exposed externally without worries
@@ -516,7 +565,10 @@
                 title: this.getTitle(),
                 text: this.getText(),
                 sentAt: this.getSentAt(),
-                readAt: this.getReadAt()
+                readAt: this.getReadAt(),
+                attachment: this.getAttachment(),
+                twoWay:this.twoWay,
+                receivedSendReceiptAt:this.getReceivedSendReceiptAt()
             };
         },
 
@@ -747,16 +799,16 @@
             });
         },
         /**
-         * Retriee a message by a custom field
+         * Retrieve a message by a custom field
          * @param field
          * @param value
          * @param callback
          */
         getMessageByField: function (field, value, callback) {
             var q = this.db.from('messages');
-            q.where(field, '=', value);
+            q = q.where(field, '=', value);
             var limit = 1;
-            q.list().done(function (objs) {
+            q.list(limit).done(function (objs) {
                 if (objs.length) {
                     var message = new catapush.model.message(this.catapushInstance);
                     message.createFromStorage(objs[0]);
@@ -788,7 +840,6 @@
     var xmppMessage = function (catapushInstance, xmppMessage) {
         this.catapushInstance = catapushInstance;
         this.xmppMessage = xmppMessage;
-
     };
     xmppMessage.prototype = {
         catapushInstance: null,
@@ -801,7 +852,112 @@
             message.setTitle(this.getSubject());
             message.setText(this.getText());
             message.setSentAt(this.getCreationDate());
+            message.setAttachment(this.getAttachment());
             return message;
+        },
+        setFromMessage:function(message){
+            var xmlDocument = $.parseXML("<root/>");
+            var messageXml = xmlDocument.createElement('message');
+
+            var messageIdAttribute = xmlDocument.createAttribute('id');
+            messageIdAttribute.value = message.getId();
+            messageXml.setAttributeNode(messageIdAttribute);
+
+            var messageFromAttribute = xmlDocument.createAttribute('from');
+            messageFromAttribute.value = message.getFrom();
+            messageXml.setAttributeNode(messageFromAttribute);
+
+            var messageToAttribute = xmlDocument.createAttribute('to');
+            messageToAttribute.value = message.getTo();
+            messageXml.setAttributeNode(messageToAttribute);
+
+            if(message.getTitle()) {
+                var messageSubject = xmlDocument.createElement('subject');
+                messageSubject.appendChild(document.createTextNode(message.getTitle()));
+                messageXml.appendChild(messageSubject);
+            }
+
+            var messageBody = xmlDocument.createElement('body');
+            messageBody.appendChild(document.createTextNode(message.getText()));
+            messageXml.appendChild(messageBody);
+
+            var messageTimeformat = xmlDocument.createElement('timeformat');
+            var attribute = xmlDocument.createAttribute('xmlns');
+            attribute.value = 'http://www.catapush.com/extensions/message#timeformat';
+            messageTimeformat.setAttributeNode(attribute);
+            attribute = xmlDocument.createAttribute('value');
+            attribute.value = 'UTC';
+            messageTimeformat.setAttributeNode(attribute);
+            attribute = xmlDocument.createAttribute('timestamp');
+            attribute.value = message.getSentAt().getTime()/1000;
+            messageTimeformat.setAttributeNode(attribute);
+            messageXml.appendChild(messageTimeformat);
+
+            var messageTimestamp = xmlDocument.createElement('timestamp');
+            attribute = xmlDocument.createAttribute('xmlns');
+            attribute.value = 'http://www.catapush.com/extensions/message#timestamp';
+            messageTimestamp.setAttributeNode(attribute);
+            attribute = xmlDocument.createAttribute('value');
+            attribute.value = catapush.component.util.toIsoStringWithoutMilliseconds(message.getSentAt());
+            messageTimestamp.setAttributeNode(attribute);
+            messageXml.appendChild(messageTimestamp);
+
+            var messageRequest = xmlDocument.createElement('request');
+            attribute = xmlDocument.createAttribute('xmlns');
+            attribute.value = 'urn:xmpp:receipts';
+            messageRequest.setAttributeNode(attribute);
+            messageXml.appendChild(messageRequest);
+
+            if(message.getAttachment()){
+                var attachment = message.getAttachment();
+
+                var messageAttachment = xmlDocument.createElement('attachment');
+                attribute = xmlDocument.createAttribute('xmlns');
+                attribute.value = 'http://www.catapush.com/extensions/message#attachment';
+                messageAttachment.setAttributeNode(attribute);
+                attribute = xmlDocument.createAttribute('filename');
+                attribute.value = attachment.filename;
+                messageAttachment.setAttributeNode(attribute);
+                attribute = xmlDocument.createAttribute('mediaType');
+                attribute.value = attachment.mediaType;
+                messageAttachment.setAttributeNode(attribute);
+                attribute = xmlDocument.createAttribute('url');
+                attribute.value = attachment.url;
+                messageAttachment.setAttributeNode(attribute);
+                attribute = xmlDocument.createAttribute('size');
+                attribute.value = attachment.size;
+                messageAttachment.setAttributeNode(attribute);
+                attribute = xmlDocument.createAttribute('hash');
+                attribute.value = attachment.hash;
+                messageAttachment.setAttributeNode(attribute);
+                messageXml.appendChild(messageAttachment);
+
+                if(attachment.preview){
+                    var messageAttachmentPreview = xmlDocument.createElement('attachmentPreview');
+                    attribute = xmlDocument.createAttribute('xmlns');
+                    attribute.value = 'http://www.catapush.com/extensions/message#attachment';
+                    messageAttachmentPreview.setAttributeNode(attribute);
+                    attribute = xmlDocument.createAttribute('mediaType');
+                    attribute.value = attachment.preview.mediaType;
+                    messageAttachmentPreview.setAttributeNode(attribute);
+                    attribute = xmlDocument.createAttribute('content');
+                    attribute.value = attachment.preview.content;
+                    messageAttachmentPreview.setAttributeNode(attribute);
+                    messageXml.appendChild(messageAttachmentPreview);
+                }
+            }
+
+            xmlDocument.documentElement.appendChild(messageXml);
+
+            this.xmppMessage = [messageXml];
+
+        },
+        getXmlElement:function(){
+            return this.xmppMessage[0];
+        },
+        getXmlString:function(){
+            var xmlString = (new XMLSerializer()).serializeToString(this.xmppMessage[0]);
+            return xmlString;
         },
         /**
          * devicesData -> android -> title
@@ -842,6 +998,28 @@
          */
         getCreationDate: function () {
             return new Date(this.catapushInstance.ext.$('timeformat', this.xmppMessage).attr('timestamp') * 1000);
+        },
+
+        /**
+         *
+         */
+        getAttachment: function () {
+            if(!this.catapushInstance.ext.$('attachment', this.xmppMessage).length){
+                return null;
+            }
+            var data = {};
+            data.filename = this.catapushInstance.ext.$('attachment', this.xmppMessage).attr('filename');
+            data.mediaType = this.catapushInstance.ext.$('attachment', this.xmppMessage).attr('mediaType');
+            data.url = this.catapushInstance.ext.$('attachment', this.xmppMessage).attr('url');
+            data.size = this.catapushInstance.ext.$('attachment', this.xmppMessage).attr('size');
+            data.hash = this.catapushInstance.ext.$('attachment', this.xmppMessage).attr('hash');
+            data.preview = null;
+            if(this.catapushInstance.ext.$('attachmentPreview', this.xmppMessage).length){
+                data.preview = {};
+                data.preview.mediaType = this.catapushInstance.ext.$('attachmentPreview', this.xmppMessage).attr('mediaType');
+                data.preview.content = this.catapushInstance.ext.$('attachmentPreview', this.xmppMessage).attr('content');
+            }
+            return data;
         }
 
     };
@@ -992,6 +1170,53 @@
                 }
             });
         },
+
+        /**
+         * Upload file to cdn
+         * @param file
+         */
+        uploadFile:function(config, file, accessToken, callback, callbackError){
+            var data = new FormData();
+            /*catapush.ext.$.each(files, function(key, value)
+            {
+                data.append(key, value);
+            });*/
+
+            data.append('file',file);
+
+            catapush.ext.$.ajax({
+                url: config.getApiLibraryUrl() + '/cdn',
+                type: 'POST',
+                data: data,
+                cache: false,
+                dataType: 'json',
+                headers: {"Authorization": "Bearer " + accessToken},
+                processData: false, // Don't process the files
+                contentType: false, // Set content type to false as jQuery will tell the server its a query string request
+                success: function(data, textStatus, jqXHR)
+                {
+                    //console.log(data);
+                    callback(data);
+                    /*if(typeof data.error === 'undefined')
+                    {
+                        // Success so call function to process the form
+                        submitForm(event, data);
+                    }
+                    else
+                    {
+                        // Handle errors here
+                        console.log('ERRORS: ' + data.error);
+                    }*/
+                },
+                error: function(jqXHR, textStatus, errorThrown)
+                {
+                    console.log(textStatus);
+                    callbackError();
+                    // Handle errors here
+                    /*console.log('ERRORS: ' + textStatus);*/
+                }
+            });
+        }
     };
 })(window.Catapush);
 /**
@@ -1147,6 +1372,16 @@
                 return false;
             }
             return uniqueId;
+        },
+        sendMessage: function (xmppConnection, message) {
+            var xmppMessage = new catapush.model.xmppMessage(catapush,null);
+            xmppMessage.setFromMessage(message);
+            var out = xmppMessage.getXmlElement();
+            xmppConnection.send(out);
+            if(!xmppConnection.connected){
+                return false;
+            }
+            return true;
         }
     };
 })(window.Catapush);
@@ -1491,6 +1726,32 @@ Strophe.addConnectionPlugin('streamManagement', {
                 updatePushToken: function (pushToken, callback, callbackError) {
                     instance.mobileUser.setPushToken(pushToken);
                     instance.service.api.updateMobileUserToken(instance.getConfig(), instance.mobileUser.getId(), instance.mobileUser.getAccessToken(), instance.mobileUser.getPushToken(), callback, callbackError);
+                },
+                sendMessage:function(text,attachment){
+                    var msg = new instance.model.message(instance);
+                    msg.setId(instance.xmppConnection.getUniqueId());
+                    msg.setFrom(instance.mobileUser.getJid() + '/Mobile');
+                    msg.setTo('incoming@xmpp.catapush.com/Server');
+                    msg.setTwoWay(true);
+                    msg.setSentAt(new Date());
+                    if(text){
+                        msg.setText(text);
+                    }else{
+                        msg.setText('');
+                    }
+                    if(attachment){
+                        msg.setAttachment(attachment);
+                    }
+                    instance.sendMessage(msg);
+                    return msg.getExternal();
+                },
+                onMessageSentReceiptReceived:function(callback){
+                    instance.service.event.subscribe('catapush.sentreceiptreceived', function (event,message) {
+                        callback(message.getExternal()); // prevent args
+                    });
+                },
+                uploadFile:function(file, callback, callbackError){
+                    instance.service.api.uploadFile(instance.getConfig(), file, instance.mobileUser.getAccessToken(), callback, callbackError);
                 }
             };
         }
