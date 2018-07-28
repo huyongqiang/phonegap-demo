@@ -29,7 +29,7 @@ Follow this steps to setup your first Cordova app (similar steps for a Ionic app
 3. Install required plugins:
    ```bash
    cd cordova
-   cordova plugin add https://git-wip-us.apache.org/repos/asf/cordova-plugin-device.git
+   cordova plugin add cordova-plugin-device
    cordova plugin add https://github.com/Catapush/phonegap-plugin-push.git --variable SENDER_ID="XXXXXXX" (in alternative to cordova plugin add phonegap-plugin-push)
    cordova plugin add cordova-plugin-x-toast
    cordova plugin add cordova-plugin-file
@@ -52,3 +52,8 @@ cordova plugin add phonegap-plugin-push@1.5.3 --variable SENDER_ID="XXXXXXX"
 * Follow these instructions to setup push notification in your Catapush App Dashboard
   * [Google GCM](http://www.catapush.com/docs-android)
   * [Apple APN](http://www.catapush.com/docs-ios)
+  
+* Try adding an old android platform if you have problems:
+```bash
+cordova platform add android@6.4.0
+```
